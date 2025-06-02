@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "monitoring-verkstedt.fullname" . }}-prometheus
+  labels:
+    {{- include "monitoring-verkstedt.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "monitoring-verkstedt.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "monitoring-verkstedt.fullname" . }}-prometheus
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        {{- include "monitoring-verkstedt.selectorLabels" . | nindent 8 }}
+    spec:
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: {{ include "monitoring-verkstedt.fullname" . }}-prometheus-config
+      containers:
+        - name: prometheus
+          image: {{ .Values.prometheus.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: web
+              containerPort: 9090
+          volumeMounts:
+            - name: prometheus-data
+              mountPath: /prometheus
+            - name: prometheus-config
+              mountPath: /etc/prometheus/
+              readOnly: true
+  volumeClaimTemplates:
+    - metadata:
+        name: prometheus-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.prometheus.storage.size }}
+        storageClassName: {{ .Values.prometheus.storage.class | default "" }}

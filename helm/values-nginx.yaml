@@ -1,0 +1,128 @@
+# Partly overrides the `nginx-verkstedt.fullname` template (retains release name)
+nameOverride: ""
+# Completely overrides the `nginx-verkstedt.fullname` template
+fullnameOverride: "nginx-verkstedt"
+
+# Deployment parameters
+application:
+  # Enable Stakater Reloader annotation
+  reloader: true
+  # Container image parameters
+  image:
+    repository: kshevando/nginx-verkstedt
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  # Probes settings
+  probes:
+    livenessProbe:
+      httpGet:
+        path: /index.html
+        port: http
+      initialDelaySeconds: 5
+      periodSeconds: 15
+      timeoutSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /index.html
+        port: http
+      initialDelaySeconds: 5
+      periodSeconds: 15
+  # Resources definitions (limits and requests)
+  resources:
+    limits:
+      cpu: "0.2"
+      memory: "400Mi"
+    requests:
+      cpu: "0.1"
+      memory: "200Mi"
+
+service:
+  # Type of service. Possible values: ClusterIP or NodePort
+  type: ClusterIP
+  port: 80
+  name: ""
+  nodePort: ""
+
+ingress:
+  # Ingress disabled by default
+  enabled: false
+  # To define ingress class if needed.
+  className: ""
+  # Annotations.
+  # Do not define the annotation kubernetes.io/ingress.class here.
+  # Use the className field above instead.
+  annotations: {}
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# DB connection settings
+db:
+  host: postgresql-verkstedt-svc.postgres.svc.cluster.local
+  port: "5432"
+  name: mydb
+  user: myuser
+  password: mypassword
+  secret:
+    enabled: true
+    name: db-credentials
+
+# Content of Nginx default.conf file passed via configmap
+conf:
+  default: |
+    server {
+        listen       80;
+        server_name  localhost;
+
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
+
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+    }
+
+# Set of HTML files passed via configmap
+html:
+  index: |
+    <html>
+    <head>
+        <title>QA env</title>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+    <h1>QA env</h1>
+
+    </body>
+    </html>
+  50x: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+        <meta content="utf-8" http-equiv="encoding">
+        <title>Error</title>
+        <style>
+            body {
+                width: 35em;
+                margin: 0 auto;
+                font-family: Tahoma, Verdana, Arial, sans-serif;
+            }
+        </style>
+    </head>
+    <body>
+    <h1>An error occurred.</h1>
+    <p>Sorry, the page you are looking for is currently unavailable.<br/>
+        Please try again later.</p>
+    </body>
+    </html>

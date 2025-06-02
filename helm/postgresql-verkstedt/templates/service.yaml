@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "postgresql-verkstedt.fullname" . }}-svc
+  labels:
+    {{- include "postgresql-verkstedt.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "postgresql-verkstedt.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      name: {{ .Values.service.name | default "postgres" }}

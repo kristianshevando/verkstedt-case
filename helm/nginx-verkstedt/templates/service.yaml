@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "nginx-verkstedt.fullname" . }}-svc
+  labels:
+    {{- include "nginx-verkstedt.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 80
+      {{- if .Values.service.name }}
+      name: {{ .Values.service.name }}
+      {{- end }}
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "nginx-verkstedt.selectorLabels" . | nindent 4 }}
+

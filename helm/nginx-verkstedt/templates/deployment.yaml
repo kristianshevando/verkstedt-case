@@ -1,0 +1,77 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{ include "nginx-verkstedt.fullname" . }}
+  labels:
+    {{- include "nginx-verkstedt.labels" . | nindent 4 }}
+  {{- if .Values.application.reloader }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+    configmap.reloader.stakater.com/reload: {{ include "nginx-verkstedt.fullname" . }}-conf,{{ include "nginx-verkstedt.fullname" . }}-html
+  {{- end }}
+spec:
+  replicas: {{ .Values.application.replicas }}
+  revisionHistoryLimit: {{ .Values.application.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "nginx-verkstedt.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.application.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "nginx-verkstedt.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.application.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "nginx-verkstedt.fullname" . }}
+          image: "{{ .Values.application.image.repository }}:{{ .Values.application.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.application.image.pullPolicy }}
+          ports:
+            - containerPort: 80
+              name: http
+          {{- with .Values.application.probes }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.application.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: DB_HOST
+              value: "postgresql-verkstedt-svc.postgres.svc.cluster.local"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_DB
+                  name: db-credentials
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_USER
+                  name: db-credentials
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: POSTGRES_PASSWORD
+                  name: db-credentials
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+            - name: config
+              mountPath: /etc/nginx/conf.d/
+      volumes:
+        - name: html
+          configMap:
+            name: {{ include "nginx-verkstedt.fullname" . }}-html
+        - name: config
+          configMap:
+            name: {{ include "nginx-verkstedt.fullname" . }}-conf

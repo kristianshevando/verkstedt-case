@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "postgresql-verkstedt.fullname" . }}
+  labels:
+    {{- include "postgresql-verkstedt.labels" . | nindent 4 }}
+  {{- if .Values.postgresql.reloader }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+    secret.reloader.stakater.com/reload: {{ .Values.postgresql.secret.name | default (include "postgresql-verkstedt.fullname" .) }}
+  {{- end }}
+spec:
+  serviceName: {{ include "postgresql-verkstedt.fullname" . }}-svc
+  replicas: {{ .Values.postgresql.replicas }}
+  revisionHistoryLimit: {{ .Values.postgresql.revisionHistoryLimit | default 10 }}
+  selector:
+    matchLabels:
+      {{- include "postgresql-verkstedt.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "postgresql-verkstedt.labels" . | nindent 8 }}
+      {{- with .Values.postgresql.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.postgresql.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "postgresql-verkstedt.fullname" . }}
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: {{ .Values.service.name | default "postgres" }}
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.secret.name | default (include "postgresql-verkstedt.fullname" .) }}
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.secret.name | default (include "postgresql-verkstedt.fullname" .) }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.secret.name | default (include "postgresql-verkstedt.fullname" .) }}
+                  key: postgres-password
+          {{- with .Values.postgresql.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      {{- if .Values.postgresql.extraVolumes }}
+      volumes:
+        {{- toYaml .Values.postgresql.extraVolumes | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        {{- end }}

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "monitoring-verkstedt.fullname" . }}-data
+  labels:
+    {{- include "monitoring-verkstedt.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.storage.size | default "2Gi" }}

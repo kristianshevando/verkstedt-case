@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nodeExporter.serviceName }}
+  labels:
+    {{- include "monitoring-verkstedt.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "monitoring-verkstedt.name" . }}
+    app.kubernetes.io/component: node-exporter
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: 9100

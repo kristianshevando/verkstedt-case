@@ -1,0 +1,41 @@
+postgresql:
+  replicas: 1  # Number of PostgreSQL replicas
+  reloader: true  # Enable Stakater Reloader annotations
+  database: mydb  # Name of the PostgreSQL database
+  user: myuser  # PostgreSQL username
+  password: mypassword  # PostgreSQL password
+
+  secret:
+    enabled: true  # Whether to create a Kubernetes Secret
+    name: postgresql-secret  # Name of the Secret resource
+    data:
+      POSTGRES_USER: myuser  # Reference to the user value
+      POSTGRES_DB: mydb  # Reference to the database name
+      postgres-password: mypassword  # Reference to the password
+
+  image:
+    repository: postgres  # Docker image repository
+    tag: "15"  # Image tag to use
+    pullPolicy: IfNotPresent  # Image pull policy
+
+  imagePullSecrets: []  # Optional imagePullSecrets for private registries
+  podAnnotations: {}  # Annotations to add to the PostgreSQL pod
+
+  resources:  # Resource requests and limits for the pod
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  extraVolumes: []  # List of additional volumes to mount in the PostgreSQL pod
+
+persistence:
+  enabled: true  # Whether to enable persistent volume claims
+  size: 1Gi  # Requested storage size
+  storageClass: ""  # Optional storageClass; if empty, default class is used
+
+service:
+  port: 5432  # PostgreSQL service port
+  name: postgres  # Name of the service

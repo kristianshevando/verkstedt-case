@@ -1,0 +1,5 @@
+project_id        = "my-prod-project"
+region            = "europe-west1"
+network_name      = "prod-sql-vpc"
+sql_instance_name = "prod-postgres"
+sql_tier          = "db-custom-2-7680"

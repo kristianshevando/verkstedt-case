@@ -1,0 +1,5 @@
+project_id        = "my-nonprod-project"
+region            = "europe-west1"
+network_name      = "nonprod-sql-vpc"
+sql_instance_name = "nonprod-postgres"
+sql_tier          = "db-custom-1-3840"
